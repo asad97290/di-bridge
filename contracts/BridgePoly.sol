@@ -114,6 +114,10 @@ contract BridgePoly is ECDSA {
             revert ZeroAmount();
         }
 
+        if(from == address(0) || to == address(0)){
+            revert ZeroAddress();
+        }
+
         // Create a unique message hash
         bytes32 message = prefixed(keccak256(abi.encodePacked(from, to, amount, nonce)));
 

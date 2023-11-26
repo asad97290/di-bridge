@@ -70,6 +70,9 @@ contract BridgeAvax is AccessControl, ECDSA {
         uint nonce,
         bytes calldata signature
     ) external onlyRole(MINTER_ROLE) {
+        if(from == address(0) || to == address(0)){
+            revert ZeroAddress();
+        }
         // Creating a unique message hash
         bytes32 message = prefixed(keccak256(abi.encodePacked(from, to, amount, nonce)));
 
@@ -112,6 +115,10 @@ contract BridgeAvax is AccessControl, ECDSA {
         uint nonce,
         bytes calldata signature
     ) external {
+          // Revert if the amount is not positive
+        if (amount <= 0) {
+            revert ZeroAmount();
+        }
         // Obtaining the sender's address
         address msgSender = msg.sender;
 

@@ -1,7 +1,6 @@
 import Web3 from "web3";
 import BridgePoly from "../abi/BridgePoly.json" assert { type: "json" };
-import dotenv from "dotenv";
-dotenv.config({ path: "../.env" });
+import {} from 'dotenv/config'
 if(!process.env.USER_ADDRESS || !process.env.USER_PK || !process.env.ADMIN_ADDRESS || !process.env.POLY_RPC){
   throw new Error("please provide env")
 }
@@ -13,7 +12,7 @@ var newAccount = polyWeb3.eth.accounts.privateKeyToAccount(userPrivateKey);
 polyWeb3.eth.accounts.wallet.add(newAccount);
 polyWeb3.eth.defaultAccount = userAddress;
 
-let BridgePoly = new polyWeb3.eth.Contract(BridgePoly.abi, BridgePoly.address);
+let BridgePolyObj = new polyWeb3.eth.Contract(BridgePoly.abi, BridgePoly.address);
 
 let nonce = Math.floor(1 + Math.random() * 1000);
 const amount = polyWeb3.utils.toWei("0.01", "ether");
@@ -33,10 +32,10 @@ const { signature } = polyWeb3.eth.accounts.sign(message, userPrivateKey);
       from: userAddress,
       to: BridgePoly.address,
       value: amount,
-      gas: BridgePoly.methods
+      gas: await BridgePolyObj.methods
         .lock(nonce, signature)
         .estimateGas({ from: userAddress, value: amount }),
-      data: BridgePoly.methods.lock(nonce, signature).encodeABI(),
+      data: BridgePolyObj.methods.lock(nonce, signature).encodeABI(),
     })
     .on("transactionHash", (tx) => {
       console.log("tx ", tx);

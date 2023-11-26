@@ -9,3 +9,4 @@ error ZeroAmount();                // Error thrown when an operation involves an
 error TransferAlreadyProcessed();  // Error thrown when attempting to process a transfer that has already been executed.
 error WrongSignature();            // Error thrown when a cryptographic signature verification fails.
 error TransferFailed();            // Error thrown when a fund transfer operation fails.
+error ZeroAddress();               // Error thrown when address is equal to zero address.

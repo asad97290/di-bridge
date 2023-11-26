@@ -35,7 +35,6 @@ class EventListener {
       );
    
 
-      console.log("contract2.address",contract2.address)
       this.subscription = this.polyWeb3ws.eth.subscribe(
         "logs",
         {
@@ -59,8 +58,11 @@ class EventListener {
         let receipt = await this.polyWeb3.eth.getTransactionReceipt(
           data.transactionHash
         );
+        let tx = await this.polyWeb3.eth.getTransaction(data.transactionHash);
+
         let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
 
+        if(tx.input.substring(0, 10) == "0xd8f7c836"){
         let transferParams = this.polyWeb3.eth.abi.decodeLog(
           transferInputs,
           receipt["logs"][1]["data"],
@@ -83,6 +85,7 @@ class EventListener {
           .on("receipt", (receipt) => {
             console.log("receipt", receipt);
           });
+        }
       });
 
 
@@ -95,17 +98,17 @@ function init() {
   if(!process.env.AVAX_WS_RPC || !process.env.AVAX_RPC || !process.env.POLY_WS_RPC || !process.env.POLY_RPC){
     throw new Error("please provide env")
   }
-  let txChecker1 = new EventListener(
+  let txChecker2 = new EventListener(
     process.env.AVAX_WS_RPC,
     process.env.AVAX_RPC,
     process.env.POLY_WS_RPC,
     process.env.POLY_RPC
   );
-  txChecker1.subscribe(
+  txChecker2.subscribe(
     BridgeAvax,
     BridgePoly
   );
-  txChecker1.listenEvents("mint");
+  txChecker2.listenEvents("mint");
 
 }
 

@@ -1,7 +1,7 @@
 import Web3 from "web3";
 import BridgeAvax from "../abi/BridgeAvax.json" assert { type: "json" };
-import dotenv from "dotenv";
-dotenv.config({ path: "../.env" });
+import {} from 'dotenv/config'
+
 if(!process.env.USER_ADDRESS || !process.env.USER_PK || !process.env.ADMIN_ADDRESS || !process.env.AVAX_RPC){
   throw new Error("please provide env")
 }
@@ -13,7 +13,7 @@ var newAccount = avaxWeb3.eth.accounts.privateKeyToAccount(userPrivateKey);
 avaxWeb3.eth.accounts.wallet.add(newAccount);
 avaxWeb3.eth.defaultAccount = userAddress;
 
-let BridgeAvax = new avaxWeb3.eth.Contract(BridgeAvax.abi, BridgeAvax.address);
+let BridgeAvaxObj = new avaxWeb3.eth.Contract(BridgeAvax.abi, BridgeAvax.address);
 const amount = avaxWeb3.utils.toWei("0.001", "ether");
 let nonce = Math.floor(1 + Math.random() * 1000);
 const message = avaxWeb3.utils
@@ -31,10 +31,10 @@ const { signature } = avaxWeb3.eth.accounts.sign(message, userPrivateKey);
     .sendTransaction({
       from: userAddress,
       to: BridgeAvax.address,
-      gas: BridgeAvax.methods
+      gas: await BridgeAvaxObj.methods
         .burn(amount, nonce, signature)
         .estimateGas({ from: userAddress }),
-      data: BridgeAvax.methods.burn(amount, nonce, signature).encodeABI(),
+      data: BridgeAvaxObj.methods.burn(amount, nonce, signature).encodeABI(),
     })
     .on("transactionHash", (tx) => {
       console.log("tx ", tx);

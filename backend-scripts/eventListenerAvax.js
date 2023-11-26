@@ -57,14 +57,17 @@ class EventListener {
         let receipt = await this.avaxWeb3.eth.getTransactionReceipt(
           data.transactionHash
         );
-        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
+        let tx = await this.avaxWeb3.eth.getTransaction(data.transactionHash);
 
+        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
+        if(tx.input.substring(0, 10)  == "0x80a5a371"){
         let transferParams = this.avaxWeb3.eth.abi.decodeLog(
           transferInputs,
           receipt["logs"][1]["data"],
           receipt["logs"][1]["topics"]
         );
         console.log("fnName",fnName)
+
         let method = await this.contract2Obj["methods"][fnName](
           this.admin2Address,
           transferParams.from,
@@ -81,6 +84,7 @@ class EventListener {
           .on("receipt", (receipt) => {
             console.log("receipt", receipt);
           });
+        }
       });
 
 
