@@ -1,13 +1,16 @@
-# Sample Hardhat Project
+# decentralize bridge
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This project demonstrates a prototype for a decentralize bridge
 
 Try running some of the following tasks:
-
+add .env file to your project root and then run following commands
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
+nvm use 20
+npm i
+npx hardhat compile
+npx hardhat test ./test/diBridge.js
+node backend-scripts/eventListenerPoly.js 
+node backend-scripts/eventListenerAvax.js 
+node backend-scripts/lock.mjs
+node backend-scripts/redeem.mjs 
 ```
