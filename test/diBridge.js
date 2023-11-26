@@ -1,8 +1,6 @@
 const {
-    time,
     loadFixture,
   } = require("@nomicfoundation/hardhat-network-helpers");
-  const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
   const { expect } = require("chai");
   
   describe("DiBridge", function () {
@@ -11,24 +9,19 @@ const {
   
       const [owner, otherAccount] = await ethers.getSigners();
   
-      const TokenBase = await ethers.getContractFactory("TokenBase");
-      const BridgeEth = await ethers.getContractFactory("BridgeEth");
-      const BridgeBsc = await ethers.getContractFactory("BridgeBsc");
+      const TokenBase = await ethers.getContractFactory("WrappedToken");
+      const BridgeEth = await ethers.getContractFactory("BridgePoly");
+      const BridgeBsc = await ethers.getContractFactory("BridgeAvax");
 
       const tokenBase = await TokenBase.deploy("Wrapped ETH","WETH")
       const bridgeEth = await BridgeEth.deploy()
       const bridgeBsc = await BridgeBsc.deploy(tokenBase.address)
-  console.log("tokenBase.address",tokenBase.address)
-  console.log("bridgeEth.address",bridgeEth.address)
-  console.log("bridgeBsc.address",bridgeBsc.address)
       return { tokenBase, bridgeEth, bridgeBsc, owner, otherAccount };
     }
   
     describe("Deployment", function () {
       it("Should set the right unlockTime", async function () {
         const { tokenBase, bridgeEth, bridgeBsc, owner, otherAccount } = await loadFixture(deployDiBridgeFixture);
-        console.log("owner",owner.address)
-        console.log("otherAccount",otherAccount.address)
         let nonce = Math.floor(1+Math.random()*1000)
         let amountInEth = 1
         const amountInWei = ethers.utils.parseUnits(amountInEth.toString(), 'ether');

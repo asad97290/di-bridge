@@ -31,8 +31,7 @@ contract BridgeAvax is AccessControl, ECDSA {
     constructor(address _token) {
         admin = msg.sender;
         token = WrappedToken(_token);
-        token.grantRole(MINTER_ROLE, admin);
-        token.grantRole(MINTER_ROLE, address(this));
+        _grantRole(MINTER_ROLE, admin);
     }
 
    
