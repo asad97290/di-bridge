@@ -20,7 +20,7 @@ contract WrappedToken is ERC20, AccessControl {
         _mint(to, amount);
     }
 
-    function burn(address owner, uint amount) external onlyRole(MINTER_ROLE){
+    function burn(address owner, uint amount) external{
         _burn(owner, amount);
     }
 }

@@ -2,9 +2,12 @@
 
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./WrappedToken.sol";
 import '@openzeppelin/contracts/access/AccessControl.sol';
-contract BridgeAvax is AccessControl {
+import "./WrappedToken.sol";
+import "./utils/ECDSA.sol";
+import "./utils/Errors.sol";
+
+contract BridgeAvax is AccessControl, ECDSA {
     address public admin;
     WrappedToken public token;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -29,7 +32,7 @@ contract BridgeAvax is AccessControl {
         admin = msg.sender;
         token = WrappedToken(_token);
         token.grantRole(MINTER_ROLE, admin);
-
+        token.grantRole(MINTER_ROLE, address(this));
     }
 
    
@@ -45,11 +48,15 @@ contract BridgeAvax is AccessControl {
         bytes32 message = prefixed(
             keccak256(abi.encodePacked(from, to, amount, nonce))
         );
-        require(recoverSigner(message, signature) == to, "wrong signature");
-        require(
-            processedNonces[from][nonce] == false,
-            "transfer already processed"
-        );
+        if(!(recoverSigner(message, signature) == to)){
+            revert WrongSignature();
+        }
+        if(
+            processedNonces[from][nonce]
+            
+        ){
+            revert TransferAlreadyProcessed();
+        }
         processedNonces[from][nonce] = true;
         token.mint(to, amount);
         emit Transfer(
@@ -63,20 +70,22 @@ contract BridgeAvax is AccessControl {
         );
     }
 
-
      function burn(
         uint amount,
         uint nonce,
         bytes calldata signature
     ) external {
-        require(
-            processedNonces[msg.sender][nonce] == false,
-            "transfer already processed"
-        );
-        processedNonces[msg.sender][nonce] = true;
-        token.burn(msg.sender, amount);
+        address msgSender = msg.sender;
+        if(
+            processedNonces[msgSender][nonce]
+            
+        ){
+            revert TransferAlreadyProcessed();
+        }
+        processedNonces[msgSender][nonce] = true;
+        token.burn(msgSender, amount);
         emit Transfer(
-            msg.sender,
+            msgSender,
             address(this),
             amount,
             block.timestamp,
@@ -86,39 +95,5 @@ contract BridgeAvax is AccessControl {
         );
     }
     
-
-    function prefixed(bytes32 hash) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
-            );
-    }
-
-    function recoverSigner(
-        bytes32 message,
-        bytes memory sig
-    ) internal pure returns (address) {
-        (uint8 v,bytes32 r,bytes32 s) = splitSignature(sig);
-        return ecrecover(message, v, r, s);
-    }
-
-    function splitSignature(
-        bytes memory sig
-    ) internal pure returns (uint8, bytes32, bytes32) {
-        require(sig.length == 65);
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        assembly {
-            // first 32 bytes, after the length prefix
-            r := mload(add(sig, 32))
-            // second 32 bytes
-            s := mload(add(sig, 64))
-            // final byte (first byte of the next 32 bytes)
-            v := byte(0, mload(add(sig, 96)))
-        }
-        return (v, r, s);
-    }
-
 
 }
