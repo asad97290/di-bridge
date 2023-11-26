@@ -20,7 +20,7 @@ const {
     }
   
     describe("Deployment", function () {
-      it("Should set the right unlockTime", async function () {
+      it("Should test complete scenario", async function () {
         const { tokenBase, bridgeEth, bridgeBsc, owner, otherAccount } = await loadFixture(deployDiBridgeFixture);
         let nonce = Math.floor(1+Math.random()*1000)
         let amountInEth = 1

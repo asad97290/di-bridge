@@ -1,19 +1,31 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.20;
+
 import "./utils/ECDSA.sol";
 import "./utils/Errors.sol";
 
-
-contract BridgePoly is ECDSA{
+/**
+ * @title BridgePoly
+ * @dev A smart contract for handling the locking and unlocking of assets on the Polygon (Matic) network.
+ *      Users can lock funds into the contract, and an administrator can unlock funds to a specified recipient after signature verification.
+ */
+contract BridgePoly is ECDSA {
+    // Address of the administrator
     address public admin;
 
+    // Mapping to track processed nonces for each address
     mapping(address => mapping(uint => bool)) public processedNonces;
+
+    // Mapping to track the locked balance of each address
     mapping(address => uint) public lockBalance;
+
+    // Enumeration representing the steps of a transfer: Lock or Unlock
     enum Step {
         Lock,
         UnLock
     }
+
+    // Event emitted when a transfer occurs
     event Transfer(
         address from,
         address to,
@@ -24,34 +36,53 @@ contract BridgePoly is ECDSA{
         Step indexed step
     );
 
+    /**
+     * @dev Constructor function to initialize the BridgePoly contract.
+     *      Sets the contract's administrator to the deployer's address.
+     */
     constructor() {
         admin = msg.sender;
     }
-    
+
+    /**
+     * @dev Modifier to ensure that a function is only callable by the administrator.
+     */
     modifier onlyAdmin() {
-        if(!(msg.sender == admin)){
+        // Revert if the sender is not the administrator
+        if (!(msg.sender == admin)) {
             revert OnlyAdmin();
         }
         _;
     }
 
+    /**
+     * @dev Function to lock funds into the contract.
+     * @param nonce Unique identifier for the transfer to prevent replay attacks.
+     * @param signature The cryptographic signature to validate the transaction.
+     */
     function lock(uint nonce, bytes calldata signature) external payable {
+        // Obtain the amount sent in the transaction
         uint amount = msg.value;
+
+        // Obtain the sender's address
         address msgSender = msg.sender;
 
-        if(amount <= 0){
+        // Revert if the amount is not positive
+        if (amount <= 0) {
             revert ZeroAmount();
         }
-         if(
-            processedNonces[msgSender][nonce]
-            
-        ){
+
+        // Revert if the transfer has already been processed
+        if (processedNonces[msgSender][nonce]) {
             revert TransferAlreadyProcessed();
         }
-        processedNonces[msgSender][nonce] = true;
+
+        // Mark the transfer as processed
         unchecked {
             lockBalance[msgSender] += amount;
         }
+
+        // Emit the Transfer event for the lock operation
         emit Transfer(
             msgSender,
             address(this),
@@ -63,6 +94,14 @@ contract BridgePoly is ECDSA{
         );
     }
 
+    /**
+     * @dev Function to unlock funds to a specified recipient after signature verification.
+     * @param from The address from which the funds are unlocked.
+     * @param to The address to which the funds are sent.
+     * @param amount The amount of funds to be unlocked.
+     * @param nonce Unique identifier for the transfer to prevent replay attacks.
+     * @param signature The cryptographic signature to validate the transaction.
+     */
     function unLock(
         address from,
         address to,
@@ -70,27 +109,37 @@ contract BridgePoly is ECDSA{
         uint nonce,
         bytes calldata signature
     ) external onlyAdmin {
-          if(amount <= 0){
+        // Revert if the amount is not positive
+        if (amount <= 0) {
             revert ZeroAmount();
         }
-        bytes32 message = prefixed(
-            keccak256(abi.encodePacked(from, to, amount, nonce))
-        );
-        if(!(recoverSigner(message, signature) == to)){
+
+        // Create a unique message hash
+        bytes32 message = prefixed(keccak256(abi.encodePacked(from, to, amount, nonce)));
+
+        // Revert if the signature verification fails
+        if (!(recoverSigner(message, signature) == to)) {
             revert WrongSignature();
         }
-         if(
-            processedNonces[from][nonce]
-            
-        ){
+
+        // Revert if the transfer has already been processed
+        if (processedNonces[from][nonce]) {
             revert TransferAlreadyProcessed();
         }
+
+        // Mark the transfer as processed
         processedNonces[from][nonce] = true;
+
+        // Deduct the unlocked amount from the lock balance
         lockBalance[to] -= amount;
-        (bool s, ) = payable(to).call{value: amount}("");
-        if(!s){
+
+        // Transfer the unlocked funds to the specified recipient
+        (bool success, ) = payable(to).call{value: amount}("");
+        if (!success) {
             revert TransferFailed();
-        } 
+        }
+
+        // Emit the Transfer event for the unlock operation
         emit Transfer(
             from,
             to,
@@ -102,9 +151,8 @@ contract BridgePoly is ECDSA{
         );
     }
 
-   
-
-  
-
+    /**
+     * @dev Fallback function to allow the contract to receive funds.
+     */
     receive() external payable {}
 }
