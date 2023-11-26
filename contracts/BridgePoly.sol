@@ -40,7 +40,7 @@ contract BridgePoly is ECDSA {
      * @dev Constructor function to initialize the BridgePoly contract.
      *      Sets the contract's administrator to the deployer's address.
      */
-    constructor() {
+    constructor() payable{ // payable function cost less gas
         admin = msg.sender;
     }
 
@@ -134,8 +134,8 @@ contract BridgePoly is ECDSA {
         lockBalance[to] -= amount;
 
         // Transfer the unlocked funds to the specified recipient
-        (bool success, ) = payable(to).call{value: amount}("");
-        if (!success) {
+        (bool s, ) = payable(to).call{value: amount}("");
+        if (!s) {
             revert TransferFailed();
         }
 

@@ -47,7 +47,7 @@ contract BridgeAvax is AccessControl, ECDSA {
      * @dev Constructor function to initialize the BridgeAvax contract.
      * @param _token Address of the WrappedToken contract.
      */
-    constructor(address _token) {
+    constructor(address _token) payable{ // payable function cost less gas
         admin = msg.sender;
         token = WrappedToken(_token);
 
