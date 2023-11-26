@@ -21,7 +21,7 @@ let nonce = Math.floor(1+Math.random()*1000)
 const amount = fantomtomWeb3.utils.toWei("0.01","ether");
 const message = fantomtomWeb3.utils.soliditySha3(
 
-  {t: 'address', v: "0x6A393b6e432c068664bc5C2341309d1FEfF244D1"},
+  {t: 'address', v: "0x6a393b6e432c068664bc5c2341309d1feff244d1"},
   {t: 'address', v: userAddress},
   {t: 'uint256', v: amount},
   {t: 'uint256', v: nonce},

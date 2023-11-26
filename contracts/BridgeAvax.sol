@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.20;
-
-contract BridgeEth {
+pragma solidity ^0.8.19;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./TokenBase.sol";
+import '@openzeppelin/contracts/access/AccessControl.sol';
+contract BridgeAvax is AccessControl {
     address public admin;
+    TokenBase public token;
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     mapping(address => mapping(uint => bool)) public processedNonces;
-    mapping(address => uint) public lockBalance;
     enum Step {
-        Lock,
-        UnLock
+        Burn,
+        Mint
     }
     event Transfer(
         address from,
@@ -22,53 +25,23 @@ contract BridgeEth {
     );
 
 
-    constructor() {
+    constructor(address _token) {
         admin = msg.sender;
+        token = TokenBase(_token);
+        _grantRole(MINTER_ROLE, admin);
+
     }
 
-
-modifier onlyAdmin(){
-    require(msg.sender == admin,"only admin");
-    _;
-}
+   
   
-    
-    function lock(
-        uint nonce,
-        bytes calldata signature
-    ) external payable{
-        uint amount = msg.value;
-        require(amount > 0, "amount must be greater than zero");
-        require(
-            processedNonces[msg.sender][nonce] == false,
-            "transfer already processed"
-        );
-        processedNonces[msg.sender][nonce] = true;
-        unchecked{
-         lockBalance[msg.sender] += amount;
-        }
-        emit Transfer(
-            msg.sender,
-            address(this),
-            amount,
-            block.timestamp,
-            nonce,
-            signature,
-            Step.Lock
-        );
-    }
 
-
-
-  function unLock(
+    function mint(
         address from,
         address to,
         uint amount,
         uint nonce,
         bytes calldata signature
-    ) external onlyAdmin{
-        require(amount > 0, "amount must be greater than zero");
-
+    ) external onlyRole(MINTER_ROLE){
         bytes32 message = prefixed(
             keccak256(abi.encodePacked(from, to, amount, nonce))
         );
@@ -78,9 +51,7 @@ modifier onlyAdmin(){
             "transfer already processed"
         );
         processedNonces[from][nonce] = true;
-        lockBalance[to] -= amount;
-        (bool s,)= payable(to).call{value:amount}("");
-        require(s,"Transfer Failed");
+        token.mint(to, amount);
         emit Transfer(
             from,
             to,
@@ -88,10 +59,34 @@ modifier onlyAdmin(){
             block.timestamp,
             nonce,
             signature,
-            Step.UnLock
+            Step.Mint
         );
     }
-  
+
+
+     function burn(
+        uint amount,
+        uint nonce,
+        bytes calldata signature
+    ) external {
+        require(
+            processedNonces[msg.sender][nonce] == false,
+            "transfer already processed"
+        );
+        processedNonces[msg.sender][nonce] = true;
+        token.burn(msg.sender, amount);
+        emit Transfer(
+            msg.sender,
+            address(this),
+            amount,
+            block.timestamp,
+            nonce,
+            signature,
+            Step.Burn
+        );
+    }
+    
+
     function prefixed(bytes32 hash) internal pure returns (bytes32) {
         return
             keccak256(
@@ -126,5 +121,4 @@ modifier onlyAdmin(){
     }
 
 
-    receive() external payable{}
 }
