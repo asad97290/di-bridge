@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./WrappedToken.sol";
 import '@openzeppelin/contracts/access/AccessControl.sol';
@@ -27,8 +27,8 @@ contract BridgeAvax is AccessControl {
 
     constructor(address _token) {
         admin = msg.sender;
-        token = TokenBase(_token);
-        _grantRole(MINTER_ROLE, admin);
+        token = WrappedToken(_token);
+        token.grantRole(MINTER_ROLE, admin);
 
     }
 
