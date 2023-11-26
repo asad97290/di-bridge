@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./TokenBase.sol";
+import "./WrappedToken.sol";
 import '@openzeppelin/contracts/access/AccessControl.sol';
 contract BridgeAvax is AccessControl {
     address public admin;
-    TokenBase public token;
+    WrappedToken public token;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     mapping(address => mapping(uint => bool)) public processedNonces;

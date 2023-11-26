@@ -21,22 +21,16 @@ contract BridgePoly {
         Step indexed step
     );
 
-
     constructor() {
         admin = msg.sender;
     }
 
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "only admin");
+        _;
+    }
 
-modifier onlyAdmin(){
-    require(msg.sender == admin,"only admin");
-    _;
-}
-  
-    
-    function lock(
-        uint nonce,
-        bytes calldata signature
-    ) external payable{
+    function lock(uint nonce, bytes calldata signature) external payable {
         uint amount = msg.value;
         require(amount > 0, "amount must be greater than zero");
         require(
@@ -44,8 +38,8 @@ modifier onlyAdmin(){
             "transfer already processed"
         );
         processedNonces[msg.sender][nonce] = true;
-        unchecked{
-         lockBalance[msg.sender] += amount;
+        unchecked {
+            lockBalance[msg.sender] += amount;
         }
         emit Transfer(
             msg.sender,
@@ -58,15 +52,13 @@ modifier onlyAdmin(){
         );
     }
 
-
-
-  function unLock(
+    function unLock(
         address from,
         address to,
         uint amount,
         uint nonce,
         bytes calldata signature
-    ) external onlyAdmin{
+    ) external onlyAdmin {
         require(amount > 0, "amount must be greater than zero");
 
         bytes32 message = prefixed(
@@ -79,8 +71,8 @@ modifier onlyAdmin(){
         );
         processedNonces[from][nonce] = true;
         lockBalance[to] -= amount;
-        (bool s,)= payable(to).call{value:amount}("");
-        require(s,"Transfer Failed");
+        (bool s, ) = payable(to).call{value: amount}("");
+        require(s, "Transfer Failed");
         emit Transfer(
             from,
             to,
@@ -91,7 +83,7 @@ modifier onlyAdmin(){
             Step.UnLock
         );
     }
-  
+
     function prefixed(bytes32 hash) internal pure returns (bytes32) {
         return
             keccak256(
@@ -103,7 +95,7 @@ modifier onlyAdmin(){
         bytes32 message,
         bytes memory sig
     ) internal pure returns (address) {
-        (uint8 v,bytes32 r,bytes32 s) = splitSignature(sig);
+        (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
         return ecrecover(message, v, r, s);
     }
 
@@ -125,6 +117,5 @@ modifier onlyAdmin(){
         return (v, r, s);
     }
 
-
-    receive() external payable{}
+    receive() external payable {}
 }

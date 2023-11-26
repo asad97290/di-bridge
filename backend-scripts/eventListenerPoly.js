@@ -25,10 +25,6 @@ class EventListener {
     this.avaxWeb3.eth.accounts.wallet.add(newAccount);
     this.avaxWeb3.eth.defaultAccount = this.admin2Address;
 
-  //   let newAccount1 =
-  //   this.polyWeb3.eth.accounts.privateKeyToAccount(admin2PrivateKey);
-  // this.polyWeb3.eth.accounts.wallet.add(newAccount1);
-  // this.polyWeb3.eth.defaultAccount = this.admin2Address;
   }
 
   subscribe(contract1, contract2) {
@@ -63,51 +59,10 @@ class EventListener {
         let receipt = await this.polyWeb3.eth.getTransactionReceipt(
           data.transactionHash
         );
+        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
+
         let transferParams = this.polyWeb3.eth.abi.decodeLog(
-          [
-            {
-              indexed: false,
-              internalType: "address",
-              name: "from",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "date",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "nonce",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "bytes",
-              name: "signature",
-              type: "bytes",
-            },
-            {
-              indexed: true,
-              internalType: "enum BridgeEth.Step",
-              name: "step",
-              type: "uint8",
-            },
-          ],
+          transferInputs,
           receipt["logs"][1]["data"],
           receipt["logs"][1]["topics"]
         );
@@ -137,14 +92,14 @@ class EventListener {
   }
 }
 function init() {
-  /**
-   * Event listener for Polygon
-   */
+  if(!process.env.AVAX_WS_RPC || !process.env.AVAX_RPC || !process.env.POLY_WS_RPC || !process.env.POLY_RPC){
+    throw new Error("please provide env")
+  }
   let txChecker1 = new EventListener(
-    "wss://api.avax-test.network/ext/bc/C/ws",
-    "https://api.avax-test.network/ext/bc/C/rpc",
-    "wss://polygon-mumbai.infura.io/ws/v3/9dacfd2750074b6fb82003cc187e06c4",
-    "https://polygon-mumbai.infura.io/v3/9dacfd2750074b6fb82003cc187e06c4"
+    process.env.AVAX_WS_RPC,
+    process.env.AVAX_RPC,
+    process.env.POLY_WS_RPC,
+    process.env.POLY_RPC
   );
   txChecker1.subscribe(
     BridgeAvax,
@@ -152,12 +107,6 @@ function init() {
   );
   txChecker1.listenEvents("mint");
 
-  /**
-   * Event listener for Avalanche
-   */
-
- 
-  // txChecker1.listenEvents("unLock");
 }
 
 init();

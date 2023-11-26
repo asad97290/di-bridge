@@ -1,52 +1,47 @@
-import Web3 from "web3"
-import BridgeEth from "../abi/BridgeEth.json" assert { type: "json" };
+import Web3 from "web3";
+import BridgePoly from "../abi/BridgePoly.json" assert { type: "json" };
+import dotenv from "dotenv";
+dotenv.config({ path: "../.env" });
+if(!process.env.USER_ADDRESS || !process.env.USER_PK || !process.env.ADMIN_ADDRESS || !process.env.POLY_RPC){
+  throw new Error("please provide env")
+}
+let polyWeb3 = new Web3(process.env.POLY_RPC);
+let userAddress = process.env.USER_ADDRESS;
+let userPrivateKey = process.env.USER_PK;
 
-let fantomtomWeb3 = new Web3("https://polygon-mumbai.infura.io/v3/9dacfd2750074b6fb82003cc187e06c4")
+var newAccount = polyWeb3.eth.accounts.privateKeyToAccount(userPrivateKey);
+polyWeb3.eth.accounts.wallet.add(newAccount);
+polyWeb3.eth.defaultAccount = userAddress;
 
-let userAddress = "0x154ab77D6560A12955376cb66cF3fceeC7F973E4"
-let userPrivateKey = "0x9809a34834a64865a2f76c49a4fd362d9610ce19056e908264bbf6475ac00b18"
+let BridgePoly = new polyWeb3.eth.Contract(BridgePoly.abi, BridgePoly.address);
 
+let nonce = Math.floor(1 + Math.random() * 1000);
+const amount = polyWeb3.utils.toWei("0.01", "ether");
+const message = polyWeb3.utils
+  .soliditySha3(
+    { t: "address", v: process.env.ADMIN_ADDRESS },
+    { t: "address", v: userAddress },
+    { t: "uint256", v: amount },
+    { t: "uint256", v: nonce }
+  )
+  .toString("hex");
+const { signature } = polyWeb3.eth.accounts.sign(message, userPrivateKey);
 
-
-var newAccount = fantomtomWeb3.eth.accounts.privateKeyToAccount(userPrivateKey);
-fantomtomWeb3.eth.accounts.wallet.add(newAccount);
-fantomtomWeb3.eth.defaultAccount = userAddress;
-
-
-let Birdge1 = new fantomtomWeb3.eth.Contract(BridgeEth.abi,BridgeEth.address)
-
-
-
-let nonce = Math.floor(1+Math.random()*1000)
-const amount = fantomtomWeb3.utils.toWei("0.01","ether");
-const message = fantomtomWeb3.utils.soliditySha3(
-
-  {t: 'address', v: "0x6a393b6e432c068664bc5c2341309d1feff244d1"},
-  {t: 'address', v: userAddress},
-  {t: 'uint256', v: amount},
-  {t: 'uint256', v: nonce},
-).toString('hex');
-const { signature } = fantomtomWeb3.eth.accounts.sign(
-  message, 
-  userPrivateKey
-); 
-
-(async function(){
-
-console.log("amount",amount)
-    fantomtomWeb3.eth.sendTransaction(
-    {
-        from:userAddress,
-        to:BridgeEth.address,
-        value:amount,
-        gas:"210000",
-        data:Birdge1.methods.lock(nonce, signature).encodeABI()
+(async function () {
+  polyWeb3.eth
+    .sendTransaction({
+      from: userAddress,
+      to: BridgePoly.address,
+      value: amount,
+      gas: BridgePoly.methods
+        .lock(nonce, signature)
+        .estimateGas({ from: userAddress, value: amount }),
+      data: BridgePoly.methods.lock(nonce, signature).encodeABI(),
     })
-.on("transactionHash",(tx)=>{
-console.log("tx ",tx)
-})
-.on("receipt",(receipt)=>{
-    
-    console.log("receipt ",receipt)
-})
-})()
+    .on("transactionHash", (tx) => {
+      console.log("tx ", tx);
+    })
+    .on("receipt", (receipt) => {
+      console.log("receipt ", receipt);
+    });
+})();
