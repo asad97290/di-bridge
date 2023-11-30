@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "./utils/ECDSA.sol";
 import "./utils/Errors.sol";
@@ -50,7 +50,7 @@ contract BridgePoly is ECDSA {
     modifier onlyAdmin() {
         // Revert if the sender is not the administrator
         if (!(msg.sender == admin)) {
-            revert OnlyAdmin();
+            revert CommanErrors.OnlyAdmin();
         }
         _;
     }
@@ -69,12 +69,12 @@ contract BridgePoly is ECDSA {
 
         // Revert if the amount is not positive
         if (amount <= 0) {
-            revert ZeroAmount();
+            revert CommanErrors.ZeroAmount();
         }
 
         // Revert if the transfer has already been processed
         if (processedNonces[msgSender][nonce]) {
-            revert TransferAlreadyProcessed();
+            revert CommanErrors.TransferAlreadyProcessed();
         }
 
         // Mark the transfer as processed
@@ -111,11 +111,11 @@ contract BridgePoly is ECDSA {
     ) external onlyAdmin {
         // Revert if the amount is not positive
         if (amount <= 0) {
-            revert ZeroAmount();
+            revert CommanErrors.ZeroAmount();
         }
 
         if(from == address(0) || to == address(0)){
-            revert ZeroAddress();
+            revert CommanErrors.ZeroAddress();
         }
 
         // Create a unique message hash
@@ -123,12 +123,12 @@ contract BridgePoly is ECDSA {
 
         // Revert if the signature verification fails
         if (!(recoverSigner(message, signature) == to)) {
-            revert WrongSignature();
+            revert CommanErrors.WrongSignature();
         }
 
         // Revert if the transfer has already been processed
         if (processedNonces[from][nonce]) {
-            revert TransferAlreadyProcessed();
+            revert CommanErrors.TransferAlreadyProcessed();
         }
 
         // Mark the transfer as processed
@@ -140,7 +140,7 @@ contract BridgePoly is ECDSA {
         // Transfer the unlocked funds to the specified recipient
         (bool s, ) = payable(to).call{value: amount}("");
         if (!s) {
-            revert TransferFailed();
+            revert CommanErrors.TransferFailed();
         }
 
         // Emit the Transfer event for the unlock operation

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 // Importing necessary OpenZeppelin contracts and custom utility contracts
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import '@openzeppelin/contracts/access/AccessControl.sol';
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AccessControl} from '@openzeppelin/contracts/access/AccessControl.sol';
 import "./WrappedToken.sol";
 import "./utils/ECDSA.sol";
 import "./utils/Errors.sol";
@@ -71,19 +71,19 @@ contract BridgeAvax is AccessControl, ECDSA {
         bytes calldata signature
     ) external onlyRole(MINTER_ROLE) {
         if(from == address(0) || to == address(0)){
-            revert ZeroAddress();
+            revert CommanErrors.ZeroAddress();
         }
         // Creating a unique message hash
         bytes32 message = prefixed(keccak256(abi.encodePacked(from, to, amount, nonce)));
 
         // Verifying the signature
         if (!(recoverSigner(message, signature) == to)) {
-            revert WrongSignature();
+            revert CommanErrors.WrongSignature();
         }
 
         // Checking if the transfer has already been processed
         if (processedNonces[from][nonce]) {
-            revert TransferAlreadyProcessed();
+            revert CommanErrors.TransferAlreadyProcessed();
         }
 
         // Marking the transfer as processed
@@ -117,14 +117,14 @@ contract BridgeAvax is AccessControl, ECDSA {
     ) external {
           // Revert if the amount is not positive
         if (amount <= 0) {
-            revert ZeroAmount();
+            revert CommanErrors.ZeroAmount();
         }
         // Obtaining the sender's address
         address msgSender = msg.sender;
 
         // Checking if the transfer has already been processed
         if (processedNonces[msgSender][nonce]) {
-            revert TransferAlreadyProcessed();
+            revert CommanErrors.TransferAlreadyProcessed();
         }
 
         // Marking the transfer as processed

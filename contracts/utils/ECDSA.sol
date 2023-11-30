@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 /**
  * @title ECDSA
  * @dev An abstract contract providing utility functions for handling ECDSA signatures.
  */
-abstract contract ECDSA {
+contract ECDSA {
 
     /**
      * @dev Internal function to prefix a given hash as per the Ethereum Signed Message format.
