@@ -1,7 +1,9 @@
 const Web3 = require("web3");
+const path = require("path");
 const BridgeAvax = require("../abi/BridgeAvax.json");
 const BridgePoly = require("../abi/BridgePoly.json");
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config({ path: path.resolve(__dirname,"../.env") });
+
 class EventListener {
   avaxWeb3ws;
   avaxWeb3;
@@ -59,8 +61,8 @@ class EventListener {
         );
         let tx = await this.avaxWeb3.eth.getTransaction(data.transactionHash);
 
+      if(tx.input.substring(0, 10)  == "0x80a5a371"){
         let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
-        if(tx.input.substring(0, 10)  == "0x80a5a371"){
         let transferParams = this.avaxWeb3.eth.abi.decodeLog(
           transferInputs,
           receipt["logs"][1]["data"],

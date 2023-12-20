@@ -1,7 +1,11 @@
 const Web3 = require("web3");
+const {MongoClient} = require("mongodb");
+const path = require("path");
 const BridgeAvax = require("../abi/BridgeAvax.json");
 const BridgePoly = require("../abi/BridgePoly.json");
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config({ path: path.resolve(__dirname,"../.env") }); 
+let client = new MongoClient("mongodb+srv://rafzal:g5KzlC0K0S8JaIy8@cluster0.bi6xy8o.mongodb.net/?retryWrites=true&w=majority")
+
 class EventListener {
   avaxWeb3ws;
   avaxWeb3;
@@ -60,9 +64,9 @@ class EventListener {
         );
         let tx = await this.polyWeb3.eth.getTransaction(data.transactionHash);
 
-        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
-
+        
         if(tx.input.substring(0, 10) == "0xd8f7c836"){
+        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
         let transferParams = this.polyWeb3.eth.abi.decodeLog(
           transferInputs,
           receipt["logs"][1]["data"],
@@ -82,8 +86,14 @@ class EventListener {
           .on("transactionHash", (tx) => {
             console.log("tx", tx);
           })
-          .on("receipt", (receipt) => {
+          .on("receipt", async(receipt) => {
             console.log("receipt", receipt);
+            const BlockNumbers = client.db("gpt_chat").collection("blockNumbers");
+            const Transactions = client.db("gpt_chat").collection("transactions");
+
+            await BlockNumbers.updateOne({},{currnetBlockNumber:data.blockNumber})
+            await Transactions.insertOne({transactionHash:data.transactionHash})
+
           });
         }
       });
@@ -94,7 +104,8 @@ class EventListener {
     }
   }
 }
-function init() {
+async function init() {
+  try{
   if(!process.env.AVAX_WS_RPC || !process.env.AVAX_RPC || !process.env.POLY_WS_RPC || !process.env.POLY_RPC){
     throw new Error("please provide env")
   }
@@ -110,6 +121,73 @@ function init() {
   );
   txChecker2.listenEvents("mint");
 
+
+  await client.connect()
+  const Transactions = client.db("gpt_chat").collection("transactions");
+  
+  const BlockNumbers = client.db("gpt_chat").collection("blockNumbers");
+  let blockNum = await BlockNumbers.findOne({})
+  console.log(blockNum.currnetBlockNumber)
+
+  let web3 = new Web3(new Web3.providers.WebsocketProvider(process.env.POLY_WS_RPC));
+
+   let contract = new web3.eth.Contract(
+        BridgePoly.abi,
+        BridgePoly.address
+      );
+  let events = await contract.getPastEvents("Transfer",{
+    fromBlock: blockNum?.currnetBlockNumber || 0,
+     toBlock: 'latest'
+})
+for(let event of events){
+      console.log("event",event)
+      let transaction = await Transactions.findOne({transactionHash:event.transactionHash})
+      if(!transaction){
+        // mint token tx
+        /**
+         
+        let receipt = await this.polyWeb3.eth.getTransactionReceipt(
+          transaction.transactionHash
+        );
+        let tx = await this.polyWeb3.eth.getTransaction(transaction.transactionHash);
+
+        
+        if(tx.input.substring(0, 10) == "0xd8f7c836"){
+        let transferInputs = BridgeAvax.abi.filter(({ name }) => name === 'Transfer')[0]['inputs'];
+        let transferParams = this.polyWeb3.eth.abi.decodeLog(
+          transferInputs,
+          receipt["logs"][1]["data"],
+          receipt["logs"][1]["topics"]
+        );
+        console.log("fnName",fnName)   
+         let method = await this.contract1Obj["methods"][fnName](
+          this.admin2Address,
+          transferParams.from,
+          transferParams.amount,
+          transferParams.nonce,
+          transferParams.signature
+        );
+        let gas = await method.estimateGas({ from: this.admin2Address });
+        await method
+          .send({ from: this.admin2Address, gas })
+          .on("transactionHash", (tx) => {
+            console.log("tx", tx);
+          })
+          .on("receipt", async(receipt) => {
+            console.log("receipt", receipt);
+            const BlockNumbers = client.db("gpt_chat").collection("blockNumbers");
+
+            await BlockNumbers.updateOne({},{currnetBlockNumber:receipt.blockNumber})
+            await Transactions.insertOne({transactionHash:data.transactionHash})
+
+          });
+         */
+      }
+
+    }
+  }catch(err){
+    console.log(err)
+  }
 }
 
 init();
