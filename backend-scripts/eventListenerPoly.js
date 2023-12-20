@@ -4,7 +4,9 @@ const path = require("path");
 const BridgeAvax = require("../abi/BridgeAvax.json");
 const BridgePoly = require("../abi/BridgePoly.json");
 require("dotenv").config({ path: path.resolve(__dirname,"../.env") }); 
-let client = new MongoClient("mongodb+srv://rafzal:g5KzlC0K0S8JaIy8@cluster0.bi6xy8o.mongodb.net/?retryWrites=true&w=majority")
+let client = new MongoClient(
+  process.env.DB_URL
+  )
 
 class EventListener {
   avaxWeb3ws;
